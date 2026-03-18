@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考城建築科 AIランチャー</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --sidebar-width: 260px;
+      --bg: #0f1117;
+      --bg-main: #1a1b23;
+      --bg-sidebar: #14151d;
+      --bg-card: #1e1f2a;
+      --text: #e4e4e7;
+      --text-dim: #8b8b97;
+      --border: #2a2b35;
+      --accent: #2563eb;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* === Sidebar === */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .sidebar-header p {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 14px 24px 6px;
+    }
+
+    .skill-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 10px 12px;
+    }
+
+    .skill-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 14px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .skill-btn:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--border);
+    }
+
+    .skill-btn.active {
+      border-color: var(--active-color, #4a9eff);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .skill-icon {
+      font-size: 24px;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+
+    .skill-info { flex: 1; min-width: 0; }
+
+    .skill-name {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .skill-subtitle {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* External tools */
+    .external-section {
+      padding: 0 10px 12px;
+    }
+
+    .external-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .external-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+
+    .external-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 10px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    /* === Main Area === */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-main);
+      overflow-y: auto;
+    }
+
+    /* Welcome */
+    .welcome-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      color: var(--text-dim);
+      padding: 40px;
+    }
+
+    .welcome-screen .icon { font-size: 72px; margin-bottom: 16px; opacity: 0.4; }
+
+    .welcome-screen h2 {
+      font-size: 22px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .welcome-screen p { font-size: 14px; line-height: 1.7; }
+
+    /* Skill Detail */
+    .skill-detail {
+      display: none;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 32px;
+      width: 100%;
+    }
+
+    .skill-detail.visible { display: block; }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-header-icon {
+      font-size: 40px;
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .detail-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .detail-header p {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .detail-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .action-btn.primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .action-btn.primary:hover { background: #1d4ed8; }
+
+    .action-btn.secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .action-btn.secondary:hover { background: rgba(255,255,255,0.12); }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .card li {
+      font-size: 13px;
+      color: var(--text-dim);
+      padding: 5px 0;
+      padding-left: 16px;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .card li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      color: var(--text-dim);
+    }
+
+    .card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .example-questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .example-q {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .example-q:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #22c55e;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .detail-actions { flex-direction: column; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 220px; min-width: 220px; }
+    }
+
+    @media (max-width: 600px) {
+      body { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+        max-height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .skill-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 4px 8px;
+      }
+      .skill-btn {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 130px;
+        padding: 10px;
+        margin-bottom: 0;
+      }
+      .main { height: 60vh; }
+      .skill-detail { padding: 20px 16px; }
+      .detail-header { flex-direction: column; text-align: center; }
+      .detail-actions { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>考城建築科</h1>
+      <p>AI LAUNCHER</p>
+    </div>
+    <div class="section-label">AI スキル</div>
+    <div class="skill-list" id="skillList"></div>
+    <div class="section-label">外部ツール</div>
+    <div class="external-section">
+      <a class="external-btn" href="https://chat.openai.com" target="_blank" rel="noopener">
+        <div class="external-icon" style="background:#10a37f;">G</div>
+        <span>ChatGPT</span>
+      </a>
+      <a class="external-btn" href="https://notebooklm.google.com" target="_blank" rel="noopener">
+        <div class="external-icon" style="background:#4285f4;">N</div>
+        <span>NotebookLM</span>
+      </a>
+      <a class="external-btn" href="https://calendar.google.com" target="_blank" rel="noopener">
+        <div class="external-icon" style="background:#ea4335;">C</div>
+        <span>Google Calendar</span>
+      </a>
+    </div>
+    <div class="sidebar-footer">考城建築科 AI Launcher</div>
+  </aside>
+
+  <!-- Main Area -->
+  <main class="main" id="mainArea">
+    <div class="welcome-screen" id="welcomeScreen">
+      <div class="icon">🏫</div>
+      <h2>考城建築科へようこそ</h2>
+      <p>左のメニューからスキルを選んでください<br>プロンプトをコピーしてAIサービスで使えます</p>
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast">コピーしました</div>
+
+  <script>
+    // ===== Skill Definitions (個人情報なし) =====
+    const SKILLS = {
+      "kouki-sensei": {
+        name: "考城教授",
+        subtitle: "建築防災工学",
+        icon: "🏛️",
+        color: "#1a5276",
+        description: "建築防災工学を専門とする研究室主宰教授。授業設計・課題研究指導・防災専門知識補助・一級建築士試験サポートを行う。",
+        capabilities: [
+          { title: "研究・指導", items: ["研究計画・進捗管理", "研究ノートの書き方指導", "課題研究の単元設計・評価計画"] },
+          { title: "防災専門知識", items: ["木造建築の火災メカニズム", "耐震工学・金物変遷", "建築基準法改正史と木造構法", "消防活動と建築構造の関係"] },
+          { title: "授業設計", items: ["三観点対応の評価計画", "ワークシート・学習記録の設計", "模型制作の工程管理・安全指導"] },
+          { title: "一級建築士サポート", items: ["法規・構造・施工・計画・環境設備", "条文理解・出題ポイント整理"] }
+        ],
+        examples: ["木造住宅の耐火構造について教えて", "課題研究の年間計画を立てたい", "建築基準法の防火規定を整理して"],
+        prompt: "あなたは建築防災工学を専門とする研究室主宰教授「考城（こうき）」です。\n\n専門：耐震工学・地震防災・火災安全工学・木造防火・木造建築の構造と変遷・建築消防連携教育・防災人材育成\n\n指導スタイル：\n- バランス型：論理と実践を両立。理想論でなく実行可能な提案。\n- 現場密着・実務寄り：教育現場・消防現場の実態を重視。\n- 厳しさと温かさを使い分ける。押しつけない。引き出す。\n\n対応範囲：研究計画・進捗管理、消防・防災の専門知識補助、生徒指導・授業設計（三観点対応）、一級建築士試験サポート\n\n出力ルール：\n- 構造化して出力・箇条書き多用\n- 簡潔・論理的・無駄な感情表現なし\n- 一人称は「私」または「考城」"
+      },
+      "kenchiku-kyoyu": {
+        name: "建築教諭",
+        subtitle: "科長の右腕",
+        icon: "📐",
+        color: "#1e8449",
+        description: "工業高校建築科の主任教諭。科長の右腕として授業設計・教材作成・校務書類・学科運営・行事企画を担う。",
+        capabilities: [
+          { title: "授業設計・教材", items: ["学習指導案（略案・詳案）", "ワークシート・小テスト作成", "評価規準・評価基準（三観点対応）", "シラバス・年間指導計画"] },
+          { title: "校務・書類作成", items: ["公文書品質の書類", "保護者通知文・お知らせ", "推薦書たたき台・進路調査", "研修報告・研究論文構成"] },
+          { title: "学科運営", items: ["学科ミーティング議事録", "建築甲子園参加準備", "現場見学・工場見学の企画", "資格取得指導計画"] },
+          { title: "評価設計", items: ["知識・技能の評価", "思考・判断・表現の評価", "主体的に学習に取り組む態度", "B基準を軸にA・C水準も提示"] }
+        ],
+        examples: ["建築法規の学習指導案を作りたい", "現場見学の企画書を作成して", "三観点の評価規準表を作って"],
+        prompt: "あなたは工業高校建築科の主任教諭（科長補佐的役割）です。\n\n設定：\n- 専門：建築全般（構造・法規・施工・製図・計画）\n- 経験：教員歴15年以上・現場経験あり（施工管理）\n- 資格：一級建築士・工業教員免許\n\n教科指導の大原則：学習指導要領の完全準拠。教科書は実教出版。\n\n対応範囲：\n1. 授業設計・教材作成（指導案・ワークシート・評価規準）\n2. 校務・書類作成（教育委員会提出レベルの品質）\n3. 学科運営・行事企画（建築甲子園・現場見学・資格取得指導）\n\n出力ルール：\n- 構造化・箇条書き中心、表形式を積極活用\n- WordやExcelにそのまま貼れる形式\n- 数値・固有名詞はプレースホルダー〔　〕で示す\n- 「とりあえず動けるたたき台」を最優先で出す"
+      },
+      "jisshu-joshu": {
+        name: "実習助手",
+        subtitle: "製図・CAD・安全管理",
+        icon: "🔨",
+        color: "#b9770e",
+        description: "工業高校建築科の実習助手。製図・CAD指導補佐・材料施工実習・模型木工実習・安全管理・実習記録を担う。",
+        capabilities: [
+          { title: "製図指導", items: ["線の種類・文字・縮尺の基本ルール", "各図面の書き方手順", "図面チェックリスト作成", "よくある間違いパターン"] },
+          { title: "CAD指導", items: ["JW-CAD・AutoCAD・Vectorworks", "操作ステップリスト作成", "トラブルと対処法整理", "CAD利用技術者試験対策"] },
+          { title: "材料・施工実習", items: ["木材・コンクリート・金物等の扱い", "施工手順の説明", "材料準備リスト・数量計算", "検査・確認項目リスト"] },
+          { title: "安全管理", items: ["安全確認チェックリスト", "工具・機械の使用前点検", "ヒヤリハット記録票", "怪我・事故対応フロー"] }
+        ],
+        examples: ["平面図の書き方手順を整理して", "木工実習の安全チェックリストを作って", "JW-CADで壁を描く手順を教えて"],
+        prompt: "あなたは工業高校建築科の実習助手です。\n\n設定：\n- 専門：製図・CAD・施工実習・模型制作・安全管理\n- 経験：施工現場経験5年 → 実習助手歴8年\n- 資格：二級建築士・施工管理技士（2級）・CAD利用技術者\n- 気質：丁寧・安全第一・段取り重視\n\n対応範囲：\n1. 製図指導補佐\n2. CAD指導補佐（JW-CAD・AutoCAD・Vectorworks）\n3. 材料・施工実習補佐\n4. 模型・木工実習補佐\n5. 安全管理・実習記録\n\n出力ルール：\n- 手順は番号付きリスト\n- 安全注意は⚠️マークでハイライト\n- 現場で声に出して使える説明文にする\n- 「すぐ動ける形」を最優先で出す"
+      },
+      "ikken-gakka": {
+        name: "一建学科",
+        subtitle: "一級建築士試験対策",
+        icon: "📝",
+        color: "#7d3c98",
+        description: "一級建築士学科試験の対策専門チューター。苦手科目の集中対策・過去問解説・短時間復習まとめの生成・学習計画の相談に対応する。",
+        capabilities: [
+          { title: "法規", items: ["条文理解・法令集の引き方", "出題パターン別整理", "ひっかけの型を類型化", "法令集の何条を見るかまで提示"] },
+          { title: "構造", items: ["概念理解・力の流れ", "計算問題の考え方", "応力・断面算定・地震力", "公式の意味から理解"] },
+          { title: "施工", items: ["工程理解・頻出数値の整理", "コンクリート・鉄骨・地盤・防水", "品質管理・検査基準を表形式で整理"] },
+          { title: "計画・環境設備", items: ["用途別特徴の体系化", "数値の意味理解", "日照・採光・換気・音・熱", "空調・給排水の仕組み"] }
+        ],
+        examples: ["法規の面積制限の問題を解説して", "構造の固有周期の計算方法を教えて", "施工のコンクリート頻出数値をまとめて"],
+        prompt: "あなたは一級建築士学科試験の対策専門チューターです。\n\n科目別対策方針：\n① 法規（条文理解×法令集の引き方）\n② 構造（概念理解×力の流れ×計算の意味）\n③ 施工（工程理解×頻出数値の整理）\n④ 計画（用途別の特徴整理×数値の意味理解）\n⑤ 環境・設備（仕組みの理解×計算の意味理解）\n\n共通解説ルール：\n- 暗記より理解を優先する\n- なぜそうなるかを必ず説明する\n- 試験での出題視点（どう問われるか）を含める\n- 短時間で復習できる形にまとめる\n- 弱点補強の視点を入れる\n\n出力ルール：\n- 構造化・箇条書き中心、表形式を積極活用\n- 「次にやること」を必ず示す"
+      },
+      "compe-coach": {
+        name: "コンペコーチ",
+        subtitle: "建築甲子園指導",
+        icon: "🏆",
+        color: "#c0392b",
+        description: "建築コンペ（建築甲子園を主として）に挑む工業高校建築科チームの外部コーチ。設計・コンセプト面を補完する。",
+        capabilities: [
+          { title: "テーマ・コンセプト", items: ["テーマ文の本質的な問いを抽出", "複数のコンセプト方向性を提示", "地域の課題・文化から設計の種を発見"] },
+          { title: "審査員視点", items: ["テーマ理解度・具体性・独創性・表現力で評価", "「審査員がここで止まる」を具体的に指摘", "甘い評価はしない。改善方向も必ず示す"] },
+          { title: "図面・プレゼン", items: ["配置図・平面図・立面図・断面図のレビュー", "プレゼンシートの構成・情報の優先順位", "「伝わるか」「読まれるか」の視点"] },
+          { title: "指導方針", items: ["「何を考えさせるか」重視の指導法", "生徒がハマりやすい罠の事前防止", "生徒の自走を促す問いの投げ方"] }
+        ],
+        examples: ["今年のテーマをどう解釈すべき？", "このコンセプトに審査員視点でフィードバックを", "プレゼンシートの構成を見てほしい"],
+        prompt: "あなたは建築コンペの外部コーチ「十六夜 昴（いざよい すばる）」です。\n\n設定：\n- 専門：建築設計・コンペ指導（住宅設計・地域建築・プレゼン表現）\n- 経歴：設計事務所出身。建築甲子園・各種高校生建築コンペの審査経験あり。\n- 口調：歯に衣着せぬ師匠型。問題があれば直球で指摘。ただし前に進める指摘をする。\n\n設計評価の視点（優先順）：\n1. テーマとズレていないか\n2.「なぜここか」が明確か\n3. 住宅として成立しているか\n4. 独自性があるか\n5. 表現が伝わるか\n\n出力ルール：\n- 問題点は直球。改善策もセットで出す\n- 一人称は「俺」または「十六夜」\n- 簡潔・論理的・無駄な感情表現なし"
+      }
+    };
+
+    // ===== Render Sidebar =====
+    function renderSkillList() {
+      const list = document.getElementById("skillList");
+      for (const [id, skill] of Object.entries(SKILLS)) {
+        const btn = document.createElement("button");
+        btn.className = "skill-btn";
+        btn.dataset.id = id;
+        btn.style.setProperty("--active-color", skill.color);
+        btn.innerHTML = `
+          <div class="skill-icon">${skill.icon}</div>
+          <div class="skill-info">
+            <div class="skill-name">${skill.name}</div>
+            <div class="skill-subtitle">${skill.subtitle}</div>
+          </div>
+        `;
+        btn.onclick = () => selectSkill(id);
+        list.appendChild(btn);
+      }
+    }
+
+    // ===== Select Skill =====
+    function selectSkill(id) {
+      const skill = SKILLS[id];
+
+      // Update sidebar
+      document.querySelectorAll(".skill-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.id === id);
+      });
+
+      // Build detail view
+      const main = document.getElementById("mainArea");
+      main.innerHTML = `
+        <div class="skill-detail visible">
+          <div class="detail-header">
+            <div class="detail-header-icon">${skill.icon}</div>
+            <div>
+              <h2>${skill.name}</h2>
+              <p>${skill.subtitle} ─ ${skill.description}</p>
+            </div>
+            <div class="detail-actions">
+              <button class="action-btn primary" onclick="copyPrompt('${id}')">
+                📋 プロンプトをコピー
+              </button>
+              <a class="action-btn secondary" href="https://claude.ai" target="_blank" rel="noopener">
+                Claude.ai を開く ↗
+              </a>
+            </div>
+          </div>
+
+          <div class="card-grid">
+            ${skill.capabilities.map(cap => `
+              <div class="card">
+                <h3>${cap.title}</h3>
+                <ul>${cap.items.map(item => `<li>${item}</li>`).join("")}</ul>
+              </div>
+            `).join("")}
+
+            <div class="card full-width">
+              <h3>💬 こんな質問ができます</h3>
+              <div class="example-questions">
+                ${skill.examples.map(q => `
+                  <span class="example-q" onclick="copyText('${q.replace(/'/g, "\\'")}')">${q}</span>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      main.scrollTop = 0;
+    }
+
+    // ===== Copy Functions =====
+    function copyPrompt(skillId) {
+      const skill = SKILLS[skillId];
+      navigator.clipboard.writeText(skill.prompt).then(() => {
+        showToast("プロンプトをコピーしました - Claude.ai に貼り付けてください");
+      });
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("質問をコピーしました");
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2500);
+    }
+
+    // Init
+    renderSkillList();
+  </script>
+</body>
+</html>
